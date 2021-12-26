@@ -1,20 +1,23 @@
 const express = require('express');
 const router = express.Router();
-const {getCourseQuiz, addQuestions, uploadExcelFile, hideQuiz, disablePrevious, addWrittenQuestion} = require('../../controllers/faculty/viewEachQuiz');
+const {getCourseQuiz, addQuestions, uploadExcelFile, hideQuiz, disablePrevious, addWrittenQuestion, deleteQuiz} = require('../../controllers/faculty/viewEachQuiz');
 
 router.route('/')
   .get(getCourseQuiz);
 
-router.route('/addquestions')
+router.route('/addQuestions')
   .post(uploadExcelFile.single('excelFile'), addQuestions)
 
-router.route('/hidequiz')
+router.route('/hideQuiz')
   .get(hideQuiz)
 
-router.route('/disableprevious')
+router.route('/disablePrevious')
   .get(disablePrevious)
 
-router.route('/addwrittenquestion')
+router.route('/addWrittenQuestion')
   .post(addWrittenQuestion)
+
+router.route('/deleteQuiz')
+  .post(deleteQuiz)
 
 module.exports = router;

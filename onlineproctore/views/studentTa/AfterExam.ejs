@@ -82,21 +82,23 @@
                     </div>
                 </div>
             </div>
-            <div class="col-lg-4 col-md-6 col-sm-12">
-                <div class="card card-stats">
-                  <div class="card-header card-header-danger card-header-icon">
-                    <div class="card-icon">
-                      <i class="material-icons">delete</i>
+            <% if(enrolledUser.headTa){ %>
+                <div class="col-lg-4 col-md-6 col-sm-12">
+                  <div class="card card-stats">
+                    <div class="card-header card-header-danger card-header-icon">
+                      <div class="card-icon">
+                        <i class="material-icons">delete</i>
+                      </div>
+                      <p class="card-category">Delete Quiz</p>
                     </div>
-                    <p class="card-category">Delete Quiz</p>
-                  </div>
-                  <div class="card-footer">
-                    <div class="stats">
-                      <a data-toggle="modal" data-target="#modal8" href="#">Delete This Quiz</a>
+                    <div class="card-footer">
+                      <div class="stats">
+                        <a data-toggle="modal" data-target="#modal8" href="#">Delete This Quiz</a>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+                <% } %>
           </div>
           <p></p>
           <div class="row">
