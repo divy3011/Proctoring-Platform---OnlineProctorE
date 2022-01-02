@@ -13,18 +13,20 @@ exports.getQuestions = async (req, res) => {
           for await(let question of questions){
             await QuestionSubmission.exists({submission: submission._id, question: question._id}, async (err, questionSubmission) => {
               if(!questionSubmission){
-                await QuestionSubmission.create({submission: submission._id, question: question._id});
+                await QuestionSubmission.create({submission: submission._id, question: question._id, mcq: question.mcq});
               }
             })
           }
-          await QuestionSubmission.find({submission: submission._id}, async (err, questionSubmissions) => {
-            return res.status(200).json({
-              quizId: quizId,
-              quiz: quiz,
-              questions: questions,
-              questionSubmissions: questionSubmissions
-            })
-          }).clone().catch(function(err){console.log(err)})
+          setTimeout(() => {
+            QuestionSubmission.find({submission: submission._id}, async (err, questionSubmissions) => {
+              return res.status(200).json({
+                quizId: quizId,
+                quiz: quiz,
+                questions: questions,
+                questionSubmissions: questionSubmissions
+              })
+            }).clone().catch(function(err){console.log(err)});
+          }, 100);
         }).clone().catch(function(err){console.log(err)})
       }).clone().catch(function(err){console.log(err)})
     }).clone().catch(function(err){console.log(err)})

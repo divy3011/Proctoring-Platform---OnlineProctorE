@@ -1,18 +1,6 @@
-var countDownDate = new Date("Jan 01 2022 20:47:00").getTime();
-
-var questionsType = new Map([
-    ['page01', true],
-    ['page02', true],
-    ['page03', true],
-    ['page04', false]
-]);
-
-var optionsCount = new Map([
-    ['page01', 5],
-    ['page02', 5],
-    ['page03', 5],
-    ['page04', 2]
-])
+var countDownDate;
+var questionsType = new Map();
+var optionsCount = new Map();
 
 window.onload = function() {
     start();
@@ -29,8 +17,106 @@ async function getQuizQuestions(){
     console.log('function called');
     try{
         const response = await axios.get(quizId+'/getQuestions');
-        console.log(response);
-    }catch(error){
+        const quiz = response.data.quiz;
+        const questions = response.data.questions;
+        const questionSubmissions = response.data.questionSubmissions;
+        if(quiz.disablePrevious){
+            $('#previous').attr("disabled", true);
+        }
+        // console.log(quiz);
+        // console.log(questions);
+        // console.log(questionSubmissions);
+        countDownDate = new Date(new Date(quiz.endDate).toString().slice(4,-31)).getTime();
+        var questionCount = questions.length;
+        var shuffleOrder = [];
+        for (var i=0; i<questionCount; i++){
+            shuffleOrder.push(i);
+        }
+        for (var i=0; i<questionCount; i++){
+            var j = shuffleOrder[Math.floor(Math.random() * (questionCount-i))];
+            shuffleOrder.splice(shuffleOrder.indexOf(j), 1);
+            var displayQuestion = '<div class="ques-ans';
+            if(i==0){
+                displayQuestion += ' active"';
+            }
+            else{
+                displayQuestion += ' none"';
+            }
+            displayQuestion += 'id="' + questions[j]._id + '"><div class="question"><span class="que">Q</span><span class="question-number">';
+            displayQuestion += i+1 + '.</span>' + questions[j].question + '<span style="float: right">M.M.: 8</span></div> <hr><div class="answer';
+            questionsType.set(questions[j]._id, questions[j].mcq);
+            var submission = questionSubmissions.find( ({question}) => question._id === questions[j]._id);
+            var flag = false;
+            if(questions[j].mcq){
+                optionsCount.set(questions[j]._id, questions[j].options.length+1);
+                displayQuestion += ' checkbox">';
+                var optionsOrder = [];
+                for(var k=0; k<optionsCount.get(questions[j]._id)-1; k++){
+                    optionsOrder.push(k);
+                }
+                for(var k=0; k<optionsCount.get(questions[j]._id)-1; k++){
+                    var o = optionsOrder[Math.floor(Math.random() * (optionsCount.get(questions[j]._id)-k-1))];
+                    optionsOrder.splice(optionsOrder.indexOf(o), 1);
+                    displayQuestion += '<label><input type="checkbox" name="option' + k+1 + '" value="option' + k+1 + '" id="option' + k+1 + questions[j]._id + '"';
+                    if(submission.optionsMarked.includes(questions[j].options[o])){
+                        displayQuestion += ' checked';
+                        flag = true;
+                    }
+                    displayQuestion += '><i class="fa icon-checkbox"></i><span class="options" id="text' + k+1 + questions[j]._id + '">' + questions[j].options[o] + '</span></label><br>';
+                }
+                displayQuestion += '</div></div>';
+            }
+            else{
+                optionsCount.set(questions[j]._id, 1);
+                displayQuestion += '"><textarea id="text1' + questions[j]._id + '" name="subjective" onkeydown=';
+                displayQuestion += '"if(event.keyCode===9){var v=this.value,s=this.selectionStart,e=this.selectionEnd;this.value=v.substring(0, s)+\'\t\'+v.substring(e);this.selectionStart=this.selectionEnd=s+1;return false;}"></textarea></div></div>';
+                // console.log(displayQuestion);
+            }
+            $('#addQuestions').append(displayQuestion);
+            if(!questions[j].mcq){
+                document.getElementById("text1"+questions[j]._id).value = submission.textfield;
+                var answer = $.trim($("#text1"+questions[j]._id).val());
+                if(answer == ''){}
+                else{
+                    flag=true;
+                }
+            }
+            var navigation = '<li><button id="display' + questions[j]._id + '" class="test-ques ';
+            if(submission.markedForReview){
+                navigation += 'que-mark';
+            }
+            else if(flag){
+                navigation += 'que-save';
+            }
+            else if(submission.notAnswered){
+                navigation += 'que-not-answered';
+            }
+            else{
+                navigation += 'que-not-attempted';
+            }
+            navigation += '" onclick="display(\'' + questions[j]._id + '\')"';
+            if(quiz.disablePrevious){
+                navigation += ' disabled>';
+            }
+            else{
+                navigation += '>';
+            }
+            navigation += i+1 + '</button></li>'
+            if(submission.answerLocked){
+                if(questions[j].mcq){
+                    for(var k=0; k<optionsCount.get(questions[j]._id)-1; k++){
+                        $("#option"+ k+1 + questions[j]._id).attr("disabled", true);
+                    }
+                }
+                else{
+                    $("#text1"+questions[j]._id).attr("disabled", true);
+                }
+            }
+            // console.log(navigation);
+            $('#navigator').append(navigation);
+        }
+    }
+    catch(error){
         console.log(error.response);
     }
 
@@ -60,6 +146,7 @@ function nextOrPrevQuestion() {
     }
     else{
         var answer = $.trim($("#text1"+questionId).val());
+        // console.log(document.getElementById('text1'+questionId).value);
         document.getElementById('display'+questionId).classList=['test-ques'];
         if(answer == ''){
             document.getElementById('display'+questionId).classList.add('que-not-answered');
@@ -123,7 +210,6 @@ async function display(id){
 var myfunc = setInterval(function() {
     var now = new Date().getTime();
     var timeleft = countDownDate - now;
-    // console.log(timeleft);
         
     // Calculating the days, hours, minutes and seconds left
     var hoursrem = Math.floor((timeleft) / (1000 * 60 * 60));
