@@ -26,10 +26,50 @@ exports.getQuestions = async (req, res) => {
                 questionSubmissions: questionSubmissions
               })
             }).clone().catch(function(err){console.log(err)});
-          }, 100);
+          }, 200);
         }).clone().catch(function(err){console.log(err)})
       }).clone().catch(function(err){console.log(err)})
     }).clone().catch(function(err){console.log(err)})
   })
-  
+}
+
+exports.markAnswer = async (req, res) => {
+  await QuestionSubmission.findOne({submission: req.body.submissionId, question: req.body.questionId}, (err, questionSubmission) => {
+    questionSubmission.answerLocked = req.body.answerLocked;
+    questionSubmission.notAnswered = req.body.notAnswered;
+    questionSubmission.markedForReview = req.body.markedForReview;
+    if(questionSubmission.mcq){
+      questionSubmission.optionsMarked = req.body.markedAnswer;
+    }
+    else{
+      questionSubmission.textfield = req.body.markedAnswer;
+    }
+    questionSubmission.save();
+    return res.status(204).send();
+  }).clone().catch(function(err){console.log(err)})
+}
+
+exports.submit = async (req, res) => {
+  await Submission.findOne({_id: req.body.submissionId}, (err, submission) => {
+    submission.submitted = true;
+    submission.save();
+    res.status(200).json({
+      url: '/dashboard/user/course/'+submission.quiz.course._id
+    });
+  }).clone().catch(function(err){console.log(err)})
+}
+
+exports.endTest = async (req, res) => {
+  const quizId = req.quizId;
+  await Submission.findOne({_id: req.body.submissionId}, async (err, submission) => {
+    submission.submitted = true;
+    submission.save();
+    await Quiz.findOne({_id: quizId}, (err, quiz) => {
+      quiz.quizHeld = true;
+      quiz.save();
+      res.status(200).json({
+        url: '/dashboard/user/course/'+submission.quiz.course._id
+      });
+    }).clone().catch(function(err){console.log(err)})
+  }).clone().catch(function(err){console.log(err)})
 }

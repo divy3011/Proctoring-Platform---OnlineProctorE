@@ -43,7 +43,7 @@ async function getQuizQuestions(){
                 displayQuestion += ' none"';
             }
             displayQuestion += 'id="' + questions[j]._id + '"><div class="question"><span class="que">Q</span><span class="question-number">';
-            displayQuestion += i+1 + '.</span>' + questions[j].question + '<span style="float: right">M.M.: 8</span></div> <hr><div class="answer';
+            displayQuestion += (i+1) + '.</span>' + questions[j].question + '</div> <hr><div class="answer';
             questionsType.set(questions[j]._id, questions[j].mcq);
             var submission = questionSubmissions.find( ({question}) => question._id === questions[j]._id);
             var flag = false;
@@ -57,12 +57,12 @@ async function getQuizQuestions(){
                 for(var k=0; k<optionsCount.get(questions[j]._id)-1; k++){
                     var o = optionsOrder[Math.floor(Math.random() * (optionsCount.get(questions[j]._id)-k-1))];
                     optionsOrder.splice(optionsOrder.indexOf(o), 1);
-                    displayQuestion += '<label><input type="checkbox" name="option' + k+1 + '" value="option' + k+1 + '" id="option' + k+1 + questions[j]._id + '"';
+                    displayQuestion += '<label><input type="checkbox" name="option' + (k+1) + '" value="option' + (k+1) + '" id="option' + (k+1) + questions[j]._id + '"';
                     if(submission.optionsMarked.includes(questions[j].options[o])){
                         displayQuestion += ' checked';
                         flag = true;
                     }
-                    displayQuestion += '><i class="fa icon-checkbox"></i><span class="options" id="text' + k+1 + questions[j]._id + '">' + questions[j].options[o] + '</span></label><br>';
+                    displayQuestion += '><i class="fa icon-checkbox"></i><span class="options" id="text' + (k+1) + questions[j]._id + '">' + questions[j].options[o] + '</span></label><br>';
                 }
                 displayQuestion += '</div></div>';
             }
@@ -105,7 +105,7 @@ async function getQuizQuestions(){
             if(submission.answerLocked){
                 if(questions[j].mcq){
                     for(var k=0; k<optionsCount.get(questions[j]._id)-1; k++){
-                        $("#option"+ k+1 + questions[j]._id).attr("disabled", true);
+                        $("#option"+ (k+1) + questions[j]._id).attr("disabled", true);
                     }
                 }
                 else{
@@ -117,19 +117,23 @@ async function getQuizQuestions(){
         }
     }
     catch(error){
-        console.log(error.response);
+        console.log(error);
     }
 
 }
 function nextOrPrevQuestion() {
     // console.log($('.quiz-card').find('.ques-ans.active')[0].id);
+    var submissionId = document.getElementById("submissionId").value;
+    var quizId = document.getElementById("quizId").value;
     var questionId = $('.quiz-card').find('.ques-ans.active')[0].id;
+    var markedAnswer;
+    var notAnswered = false;
     if(questionsType.get(questionId)){
         var count = 0;
-        var markedAnswer = [];
-        for(var i=1; i<optionsCount.get(questionId); i++){
-            var optionId = "#option"+i+questionId;
-            var textId = "#text"+i+questionId;
+        markedAnswer = [];
+        for(var i=0; i<optionsCount.get(questionId)-1; i++){
+            var optionId = "#option"+(i+1)+questionId;
+            var textId = "#text"+(i+1)+questionId;
             if($(optionId).is(':checked')){
                 count++;
                 markedAnswer.push($(textId)[0].innerHTML);
@@ -138,6 +142,7 @@ function nextOrPrevQuestion() {
         document.getElementById('display'+questionId).classList=['test-ques'];
         if(count == 0){
             document.getElementById('display'+questionId).classList.add('que-not-answered');
+            notAnswered = true;
         }
         else{
             document.getElementById('display'+questionId).classList.add('que-save');
@@ -145,23 +150,47 @@ function nextOrPrevQuestion() {
         // console.log($('.quiz-card').find('.ques-ans.active').find('.answer')[0].childNodes[1].childNodes[1].checked)
     }
     else{
-        var answer = $.trim($("#text1"+questionId).val());
+        markedAnswer = $.trim($("#text1"+questionId).val());
         // console.log(document.getElementById('text1'+questionId).value);
         document.getElementById('display'+questionId).classList=['test-ques'];
-        if(answer == ''){
+        if(markedAnswer == ''){
             document.getElementById('display'+questionId).classList.add('que-not-answered');
+            notAnswered = true;
         }
         else{
             document.getElementById('display'+questionId).classList.add('que-save');
         }
     }
+    var answerLocked = false;
+    if($('#previous').attr("disabled")){
+        answerLocked = true;
+    }
+    var data = {
+        questionId: questionId,
+        submissionId: submissionId,
+        mcq: questionsType.get(questionId),
+        markedAnswer: markedAnswer,
+        answerLocked: answerLocked,
+        notAnswered: notAnswered,
+        markedForReview: false
+    }
+    try{
+        axios.post(quizId + '/markAnswer', data);
+    }
+    catch(error){
+        console.log(error);
+    }
 }
 function markQuestion() {
     // console.log($('.quiz-card').find('.ques-ans.active')[0].id);
+    var submissionId = document.getElementById("submissionId").value;
+    var quizId = document.getElementById("quizId").value;
     var questionId = $('.quiz-card').find('.ques-ans.active')[0].id;
+    var markedAnswer;
+    var notAnswered = false;
     if(questionsType.get(questionId)){
         var count = 0;
-        var markedAnswer = [];
+        markedAnswer = [];
         for(var i=1; i<optionsCount.get(questionId); i++){
             var optionId = "#option"+i+questionId;
             var textId = "#text"+i+questionId;
@@ -174,7 +203,27 @@ function markQuestion() {
         // console.log($('.quiz-card').find('.ques-ans.active').find('.answer')[0].childNodes[1].childNodes[1].checked)
     }
     else{
+        markedAnswer = $.trim($("#text1"+questionId).val());
         document.getElementById('display'+questionId).classList='test-ques que-mark';
+    }
+    var answerLocked = false;
+    if($('#previous').attr("disabled")){
+        answerLocked = true;
+    }
+    var data = {
+        questionId: questionId,
+        submissionId: submissionId,
+        mcq: questionsType.get(questionId),
+        markedAnswer: markedAnswer,
+        answerLocked: answerLocked,
+        notAnswered: notAnswered,
+        markedForReview: true
+    }
+    try{
+        axios.post(quizId + '/markAnswer', data);
+    }
+    catch(error){
+        console.log(error);
     }
 }
 $(document).ready(function(){
@@ -199,8 +248,27 @@ $(document).ready(function(){
         $('.quiz-card').find('.ques-ans.active').next().addClass('none');
         $('.quiz-card').find('.ques-ans.active').next().removeClass('active');
     })
+    $('.submit').click(function(){
+        submitPaper();
+    })
 })
+function submitPaper(){
+    nextOrPrevQuestion();
+    var submissionId = document.getElementById("submissionId").value;
+    var quizId = document.getElementById("quizId").value;
+    var data = {
+        submissionId: submissionId
+    };
+    try{
+        var response = axios.post(quizId + '/submit', data);
+        window.location.href = response.url;
+    }
+    catch(error){
+        console.log(error);
+    }
+}
 async function display(id){
+    nextOrPrevQuestion();
     $('.quiz-card').find('.ques-ans.active').addClass('none');
     $('.quiz-card').find('.ques-ans.active').removeClass('active');
     document.getElementById(id).classList.add('active');
@@ -240,5 +308,18 @@ var myfunc = setInterval(function() {
         document.getElementById("mins").innerHTML = ""
         document.getElementById("secs").innerHTML = ""
         document.getElementById("end").innerHTML = "TIME UP!!";
+        nextOrPrevQuestion();
+        var submissionId = document.getElementById("submissionId").value;
+        var quizId = document.getElementById("quizId").value;
+        var data = {
+            submissionId: submissionId
+        };
+        try{
+            var response = axios.post(quizId + '/endTest', data);
+            window.location.href = response.url;
+        }
+        catch(error){
+            console.log(error);
+        }
     }
 }, 1000);
