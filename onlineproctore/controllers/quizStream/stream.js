@@ -12,8 +12,8 @@ exports.viewStudentStream = async (req, res) => {
 }
 
 exports.getStudentCameraStream = async (req, res) => {
-  var payload;
   try{
+    console.log(cameraStream);
     var body = req.body;
     const peer = new webrtc.RTCPeerConnection({
       iceServers: [
@@ -25,20 +25,21 @@ exports.getStudentCameraStream = async (req, res) => {
     const id = req.submissionId;
     const desc = new webrtc.RTCSessionDescription(body.sdp);
     await peer.setRemoteDescription(desc);
-    cameraStream[id].getTracks().forEach(track => peer.addTrack(track, cameraStream[id]));
+    if(cameraStream[id]){
+      cameraStream[id].getTracks().forEach(track => peer.addTrack(track, cameraStream[id]));
+    }
     const answer = await peer.createAnswer();
     await peer.setLocalDescription(answer);
-    payload = {
+    const payload = {
       sdp: peer.localDescription
     }
-  }catch(e){
-    console.log(e);
+    res.json(payload);
+  }catch (e){
+    res.json({sdp: 1});
   }
-  res.json(payload);
 }
 
 exports.uploadStudentCameraStream = async (req, res) => {
-  var payload;
   try{
     var body = req.body;
     const peer = new webrtc.RTCPeerConnection({
@@ -53,13 +54,13 @@ exports.uploadStudentCameraStream = async (req, res) => {
     await peer.setRemoteDescription(desc);
     const answer = await peer.createAnswer();
     await peer.setLocalDescription(answer);
-    payload = {
+    const payload = {
       sdp: peer.localDescription
     }
-  }catch(e){
-    console.log(e);
+    res.json(payload);
+  }catch (e){
+    res.json({sdp: 1});
   }
-  res.json(payload);
 }
 
 function handleTrackEvent(e, peer, id){
@@ -67,33 +68,36 @@ function handleTrackEvent(e, peer, id){
 };
 
 exports.getStudentScreenStream = async (req, res) => {
-  console.log(screenStream);
   try{
-    var body = req.body;
-    const peer = new webrtc.RTCPeerConnection({
-      iceServers: [
-        {
-          urls: "stun:stun.stunprotocol.org"
-        }
-      ]
-    });
-    const id = req.submissionId;
-    const desc = new webrtc.RTCSessionDescription(body.sdp);
-    await peer.setRemoteDescription(desc);
-    screenStream[id].getTracks().forEach(track => peer.addTrack(track, screenStream[id]));
-    const answer = await peer.createAnswer();
-    await peer.setLocalDescription(answer);
-    payload = {
-      sdp: peer.localDescription
-    }
+    setTimeout(async ()=>{
+      console.log(screenStream);
+      var body = req.body;
+      const peer = new webrtc.RTCPeerConnection({
+        iceServers: [
+          {
+            urls: "stun:stun.stunprotocol.org"
+          }
+        ]
+      });
+      const id = req.submissionId;
+      const desc = new webrtc.RTCSessionDescription(body.sdp);
+      await peer.setRemoteDescription(desc);
+      if(screenStream[id]){
+        screenStream[id].getTracks().forEach(track => peer.addTrack(track, screenStream[id]));
+      }
+      const answer = await peer.createAnswer();
+      await peer.setLocalDescription(answer);
+      const payload = {
+        sdp: peer.localDescription
+      }
+      res.json(payload);
+    }, 1000);
   }catch(e){
-    console.log(e);
+    res.json({sdp: 1});
   }
-  res.json(payload);
 }
 
 exports.uploadStudentScreenStream = async (req, res) => {
-  var payload;
   try{
     var body = req.body;
     const peer = new webrtc.RTCPeerConnection({
@@ -108,13 +112,13 @@ exports.uploadStudentScreenStream = async (req, res) => {
     await peer.setRemoteDescription(desc);
     const answer = await peer.createAnswer();
     await peer.setLocalDescription(answer);
-    payload = {
+    const payload = {
       sdp: peer.localDescription
     }
+    res.json(payload);
   }catch(e){
-    console.log(e);
+    res.json({sdp: 1});
   }
-  res.json(payload);
 }
 
 function handleScreenTrackEvent(e, peer, id){
