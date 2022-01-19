@@ -46,7 +46,7 @@ body{
     padding-bottom: 10px ;
 }
 .side-card-nav{
-    height:fit-content;
+    height:78vh;
     border: solid 1px gray;
     border-radius: 10px;
     box-shadow: 0 4px 18px 0px rgb(0 0 0 / 12%), 0 7px 10px -5px rgb(0 0 0 / 15%);
@@ -66,7 +66,7 @@ body{
     padding-top: 10px;
 }
 .panel-body{
-    height:40vh; 
+    height:70vh; 
     overflow-y:scroll;
 }
 .question{
@@ -425,4 +425,18 @@ td{
     padding-top: 1%;
     color: red;
     text-align: right;
+}
+.card .card-header-green .card-icon,
+.card .card-header-green:not(.card-header-icon):not(.card-header-text),
+.card .card-header-green .card-text{
+  box-shadow: 0 4px 20px 0px rgba(0, 0, 0, 0.14), 0 7px 10px -5px rgba(30, 161, 30, 0.4);
+}
+
+.card .card-header-green .card-icon,
+.card .card-header-green .card-text,
+.card .card-header-green:not(.card-header-icon):not(.card-header-text),
+.card.bg-green,
+.card.card-rotate.bg-green .front,
+.card.card-rotate.bg-green .back {
+  background: linear-gradient(60deg, #5BB12F, #5BB12F);
 }
