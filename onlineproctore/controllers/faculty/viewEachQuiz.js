@@ -520,3 +520,4 @@ exports.viewStream = async (req, res) => {
     res.status(200).render('videoStreaming/stream', {submission: submission});
   }).clone().catch(function(err){console.log(err)});
 }
+
