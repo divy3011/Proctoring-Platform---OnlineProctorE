@@ -6,7 +6,8 @@ const {getCourseQuiz, addQuestions, uploadExcelFile,
   addWrittenQuestion, deleteQuiz, deleteIllegalAttempts, 
   addMCQQuestion, viewDetailAnalysis, deleteQuestion,
   editMCQQuestion, editWrittenQuestion, editCourseQuiz, 
-  viewStream, downloadQuizResults} = require('../../controllers/faculty/viewEachQuiz');
+  viewStream, downloadQuizResults, downloadStudentSubmissions,
+  assignSets} = require('../../controllers/faculty/viewEachQuiz');
 
 const {getQuestions, markAnswer, submit, endTest, 
   ipAddress, audio, windowBlurred, screenSharingOff, 
@@ -25,8 +26,14 @@ router.route('/addQuestions')
 router.route('/hideQuiz')
   .get(authFacultyTaQuiz, hideQuiz)
 
+router.route('/assignSets')
+  .get(authFacultyTaQuiz, assignSets)
+
 router.route('/downloadQuizResults')
   .get(authFacultyTaQuiz, downloadQuizResults)
+
+router.route('/downloadStudentSubmissions')
+  .get(authFacultyTaQuiz, downloadStudentSubmissions)
 
 router.route('/viewDetailAnalysis')
   .get(authFacultyTaQuiz, viewDetailAnalysis)

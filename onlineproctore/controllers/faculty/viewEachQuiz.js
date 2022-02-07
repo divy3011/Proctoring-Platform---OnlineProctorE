@@ -16,6 +16,8 @@ const {webPlagiarism} = require('../../queues/webPlagiarism');
 const {generateStudentSubmission} = require('../../queues/generateStudentSubmission');
 const Excel = require('exceljs');
 const AdmZip = require('adm-zip');
+const ejs = require('ejs');
+let pdf = require("html-pdf");
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -61,11 +63,6 @@ exports.getCourseQuiz = async (req, res) => {
     await Question.find({quiz: quizId}, async (err, questions) => {
       if(err) return res.status(400).render('error/error');
       if(req.cookies.accountType == config.faculty){
-        await Enrollment.find({course: quiz.course._id, accountType: config.student}, async (err, enrollments) => {
-          for await (let enrollment of enrollments){
-            generateStudentSubmission.add({enrollmentId: enrollment._id, quizId: quiz._id});
-          }
-        }).clone().catch(function(err){console.log(err)})
         if(Date.now() >= quiz.endDate){
           quiz.quizHeld = true;
           quiz.save();
@@ -140,67 +137,80 @@ exports.getCourseQuiz = async (req, res) => {
   }).clone().catch(function(err){console.log(err)})
 }
 
-exports.addQuestions = (req, res) => {
+exports.addQuestions = async (req, res) => {
   const quizId = req.quizId;
   const filePath = path.resolve(__dirname, '../../' + req.file.path);
   const workbook = XLSX.readFile(filePath);
-  (async function() {
-    const allSheets = workbook.SheetNames;
-    for await (let i of allSheets){
-      const questions = XLSX.utils.sheet_to_json(workbook.Sheets[i]);
-      for await (let question of questions){
-        const questionType = question["Question Type"];
-        const quizQuestion = question["Question"];
-        const maximumMarks = question["Maximum Marks"];
-        var note = question["Note"];
-        if(note == undefined){
-          note = '';
-        }
-        if(questionType.toLowerCase() === "subjective"){
-          var writtenQuestion = {quiz: quizId, question: quizQuestion, maximumMarks: maximumMarks, note: note};
-          const newQuestion = new Question(writtenQuestion);
-          await Question.findOne(writtenQuestion, (err, foundQuestion) => {
-            if(err) console.log(err);
-            if(foundQuestion) console.log('Question Already Exists');
-            if(!foundQuestion) newQuestion.save();
-          }).clone().catch(function(err){console.log(err)})
-        }
-        else{
-          var options = [];
-          const negativeMarking = question["Negative Marking"];
-          const partialMarking = question["Partial Marking"];
-          var markingScheme = true;
-          if(partialMarking.toLowerCase() === "no"){
-            markingScheme = false;
+  await Quiz.findOne({_id: quizId}, async (err, quiz) => {
+    (async function() {
+      const allSheets = workbook.SheetNames;
+      for await (let i of allSheets){
+        const questions = XLSX.utils.sheet_to_json(workbook.Sheets[i]);
+        for await (let question of questions){
+          const questionType = question["Question Type"];
+          const quizQuestion = question["Question"];
+          const maximumMarks = question["Maximum Marks"];
+          const set = question["Set"];
+          if(!quiz.setNames.includes(set)){
+            quiz.setNames.push(set);
+            quiz.setCount += 1;
+            quiz.save();
           }
-          for(i=1; i<8; i++){
-            if(question["Option"+i] != undefined){
-              options.push(String(question["Option"+i]));
-            }
-            else{
-              break;
+          var note = question["Note"];
+          if(note == undefined){
+            note = '';
+          }
+          var count = 1;
+          var imageLinks = [];
+          while(question["ImageLink"+count]){
+            if(question["ImageLink"+count] != ''){
+              imageLinks.push(String(question["ImageLink"+count]));
+              count += 1;
             }
           }
-          var correctOptions = [];
-          String(question["Correct Options"]).split(',').forEach(option => {
-            correctOptions.push(String(options[parseInt(option)-1]));
-          })
-          var mcqQuestion = {quiz: quizId, question: quizQuestion, maximumMarks: maximumMarks, note: note,
-            mcq: true, options: options, correctOptions: correctOptions, markingScheme: markingScheme,
-            negativeMarking: negativeMarking};
-          const newQuestion = new Question(mcqQuestion);
-          await Question.findOne(mcqQuestion, (err, foundQuestion) => {
-            if(err) console.log(err);
-            if(foundQuestion) console.log('Question Already Exists');
-            if(!foundQuestion) newQuestion.save();
-          }).clone().catch(function(err){console.log(err)})
+          if(questionType.toLowerCase() === "subjective"){
+            var writtenQuestion = {quiz: quizId, set: set, question: quizQuestion, maximumMarks: maximumMarks, note: note, imageLinks: imageLinks};
+            const newQuestion = new Question(writtenQuestion);
+            await Question.findOne(writtenQuestion, (err, foundQuestion) => {
+              if(err) console.log(err);
+              if(foundQuestion) console.log('Question Already Exists');
+              if(!foundQuestion) newQuestion.save();
+            }).clone().catch(function(err){console.log(err)})
+          }
+          else{
+            var options = [];
+            const negativeMarking = question["Negative Marking"];
+            const partialMarking = question["Partial Marking"];
+            var markingScheme = true;
+            if(partialMarking.toLowerCase() === "no"){
+              markingScheme = false;
+            }
+            var optionCount = 1;
+            while(String(question["Option"+optionCount])!= 'undefined'){
+              options.push(String(question["Option"+optionCount]));
+              optionCount += 1;
+            }
+            var correctOptions = [];
+            String(question["Correct Options"]).split(',').forEach(option => {
+              correctOptions.push(String(options[parseInt(option)-1]));
+            })
+            var mcqQuestion = {quiz: quizId, set: set, question: quizQuestion, maximumMarks: maximumMarks, note: note,
+              mcq: true, options: options, correctOptions: correctOptions, markingScheme: markingScheme,
+              negativeMarking: negativeMarking, imageLinks: imageLinks};
+            const newQuestion = new Question(mcqQuestion);
+            await Question.findOne(mcqQuestion, (err, foundQuestion) => {
+              if(err) console.log(err);
+              if(foundQuestion) console.log('Question Already Exists');
+              if(!foundQuestion) newQuestion.save();
+            }).clone().catch(function(err){console.log(err)})
+          }
         }
       }
-    }
-    removeFile(filePath);
-    console.log(filePath);
-    return res.status(200).redirect(req.get('referer'));
-  })();
+      removeFile(filePath);
+      console.log(filePath);
+      return res.status(200).redirect(req.get('referer'));
+    })();
+  }).clone().catch(function(err){console.log(err)});
 }
 
 exports.hideQuiz = async (req, res) => {
@@ -231,24 +241,6 @@ exports.disablePrevious = async (req, res) => {
   }).clone().catch(function(err){console.log(err)})
 }
 
-exports.addWrittenQuestion = async (req, res) => {
-  const quizId = req.quizId;
-  const quizQuestion = req.body.question;
-  const maximumMarks = req.body.maximumMarks;
-  var note = req.body.note;
-  if(note == undefined){
-    note = '';
-  }
-  var writtenQuestion = {quiz: quizId, question: quizQuestion, maximumMarks: maximumMarks, note: note};
-  const newQuestion = new Question(writtenQuestion);
-  await Question.findOne(writtenQuestion, (err, foundQuestion) => {
-    if(err) console.log(err);
-    if(foundQuestion) console.log('Question Already Exists');
-    if(!foundQuestion) newQuestion.save();
-    res.status(200).redirect(req.get('referer'));
-  }).clone().catch(function(err){console.log(err)})
-}
-
 exports.deleteQuiz = async (req, res) => {
   const quizId = req.quizId;
   const confirmation = req.body.confirmation;
@@ -270,38 +262,69 @@ exports.deleteQuiz = async (req, res) => {
   }).clone().catch(function(err){console.log(err)})
 }
 
+exports.addWrittenQuestion = async (req, res) => {
+  const quizId = req.quizId;
+  const quizQuestion = req.body.question;
+  const maximumMarks = req.body.maximumMarks;
+  const set = req.body.set;
+  var note = req.body.note;
+  if(note == undefined){
+    note = '';
+  }
+  var count = 1;
+  var imageLinks = [];
+  while(req.body['imageLink'+count]){
+    if(req.body['imageLink'+count] != ''){
+      imageLinks.push(req.body['imageLink'+count]);
+      count += 1;
+    }
+  }
+  var writtenQuestion = {quiz: quizId, set: set, question: quizQuestion, maximumMarks: maximumMarks, note: note, imageLinks: imageLinks};
+  const newQuestion = new Question(writtenQuestion);
+  await Question.findOne(writtenQuestion, (err, foundQuestion) => {
+    if(err) console.log(err);
+    if(foundQuestion) console.log('Question Already Exists');
+    if(!foundQuestion) newQuestion.save();
+    res.status(200).redirect(req.get('referer'));
+  }).clone().catch(function(err){console.log(err)})
+}
+
 exports.addMCQQuestion = async (req, res) => {
   const quizId = req.quizId;
   const question = req.body.question;
   const maximumMarks = req.body.maximumMarks;
   const partialMarking = req.body.markingScheme;
+  const set = req.body.set;
   var negativeMarking = 0;
   var markingScheme = true;
   if(partialMarking.toLowerCase() === "no"){
     markingScheme = false;
   }
   var options = [];
-  if(req.body.option1)
-    options.push(req.body.option1);
-  if(req.body.option2)
-    options.push(req.body.option2);
-  if(req.body.option3)
-    options.push(req.body.option3);
-  if(req.body.option4)
-    options.push(req.body.option4);
-  if(req.body.option5)
-    options.push(req.body.option5);
-  if(req.body.option6)
-    options.push(req.body.option6);
+  var count = 1;
+  while(req.body['option'+count]){
+    if(req.body['option'+count] != ''){
+      options.push(req.body['option'+count]);
+      count += 1;
+    }
+  }
+  count = 1;
+  var imageLinks = [];
+  while(req.body['imageLink'+count]){
+    if(req.body['imageLink'+count] != ''){
+      imageLinks.push(req.body['imageLink'+count]);
+      count += 1;
+    }
+  }
   if(req.body.negativeMarking)
     negativeMarking = req.body.negativeMarking;
   var correctOptions = [];
   String(req.body.correctOptions).split(',').forEach(option => {
     correctOptions.push(String(options[parseInt(option)-1]));
   })
-  var mcqQuestion = {quiz: quizId, question: question, maximumMarks: maximumMarks,
+  var mcqQuestion = {quiz: quizId, set: set, question: question, maximumMarks: maximumMarks,
     mcq: true, options: options, correctOptions: correctOptions, markingScheme: markingScheme,
-    negativeMarking: negativeMarking};
+    negativeMarking: negativeMarking, imageLinks: imageLinks};
   const newQuestion = new Question(mcqQuestion);
   console.log(newQuestion);
   await Question.findOne(mcqQuestion, (err, foundQuestion) => {
@@ -446,29 +469,33 @@ exports.deleteQuestion = async (req, res) => {
 }
 
 exports.editMCQQuestion = async (req, res) => {
-  console.log(req.body);
+  console.log(req.body['option8']);
   const questionId = req.body.questionId;
   const questionText = req.body.question;
   const maximumMarks = req.body.maximumMarks;
   const partialMarking = req.body.markingScheme;
+  const set = req.body.set;
   var negativeMarking = 0;
   var markingScheme = true;
   if(partialMarking.toLowerCase() === "no"){
     markingScheme = false;
   }
   var options = [];
-  if(req.body.option1)
-    options.push(req.body.option1);
-  if(req.body.option2)
-    options.push(req.body.option2);
-  if(req.body.option3)
-    options.push(req.body.option3);
-  if(req.body.option4)
-    options.push(req.body.option4);
-  if(req.body.option5)
-    options.push(req.body.option5);
-  if(req.body.option6)
-    options.push(req.body.option6);
+  var count = 1;
+  while(req.body['option'+count]){
+    if(req.body['option'+count] != ''){
+      options.push(req.body['option'+count]);
+      count += 1;
+    }
+  }
+  count = 1;
+  var imageLinks = [];
+  while(req.body['imageLink'+count]){
+    if(req.body['imageLink'+count] != ''){
+      imageLinks.push(req.body['imageLink'+count]);
+      count += 1;
+    }
+  }
   if(req.body.negativeMarking)
     negativeMarking = req.body.negativeMarking;
   var correctOptions = [];
@@ -480,9 +507,11 @@ exports.editMCQQuestion = async (req, res) => {
     question.question = questionText;
     question.maximumMarks = maximumMarks;
     question.options = options;
+    question.set = set;
     question.correctOptions = correctOptions;
     question.markingScheme = markingScheme;
     question.negativeMarking = negativeMarking;
+    question.imageLinks = imageLinks;
     question.save();
     return res.status(204).send();
   }).clone().catch(function(err){console.log(err)})
@@ -493,13 +522,24 @@ exports.editWrittenQuestion = async (req, res) => {
   const quizQuestion = req.body.question;
   const maximumMarks = req.body.maximumMarks;
   var note = req.body.note;
+  const set = req.body.set;
   if(note == undefined){
     note = '';
+  }
+  var count = 1;
+  var imageLinks = [];
+  while(req.body['imageLink'+count]){
+    if(req.body['imageLink'+count] != ''){
+      imageLinks.push(req.body['imageLink'+count]);
+      count += 1;
+    }
   }
   await Question.findOne({_id: questionId}, (err, question) => {
     question.question = quizQuestion;
     question.note = note;
+    question.set = set;
     question.maximumMarks = maximumMarks;
+    question.imageLinks = imageLinks;
     question.save();
     return res.status(204).send();
   }).clone().catch(function(err){console.log(err)});
@@ -575,7 +615,9 @@ exports.downloadQuizResults = async (req, res) => {
               var zip = new AdmZip();
               await zip.addLocalFile(path.resolve(__dirname,'../../'+quiz.quizName+'_'+quiz._id+'.xlsx'));
               var zipFileContents = await zip.toBuffer();
-              return res.end(zipFileContents);
+              res.end(zipFileContents);
+              removeFile(path.resolve(__dirname,'../../'+quiz.quizName+'_'+quiz._id+'.xlsx'))
+              return;
             })
             .catch(err => {
               console.log(err.message);
@@ -585,4 +627,125 @@ exports.downloadQuizResults = async (req, res) => {
       })
     }).clone().catch(function(err){console.log(err)});
   }).clone().catch(function(err){console.log(err)});
+}
+
+exports.downloadStudentSubmissions = async (req, res) => {
+  await Submission.find({quiz: req.quizId}, async (err, submissions) => {
+    const fileName = 'submissions.zip';
+    const fileType = 'application/zip';
+    res.writeHead(200, {
+      'Content-Disposition': `attachment; filename="${fileName}"`,
+      'Transfer-Encoding': 'chunked',
+      'Content-Type': fileType,
+    });
+    var zip = new AdmZip();
+    let submissionGeneration = submissions.map(function(submission, index){
+      return new Promise(async function(resolve){
+        await QuestionSubmission.find({submission: submission._id}, async (err, questionSubmissions) => {
+          await Submission.find({quiz: submission.quiz._id, ipAddress: submission.ipAddress}, (err, present) => {
+            var maxPlag = 0;
+            for(let i=0; i < questionSubmissions.length; i++){
+              maxPlag = Math.max(questionSubmissions[i].webSource.plagiarismPercent, maxPlag);
+            }
+            var unique = 'No';
+            if(present.length > 1){
+              for(let i=0; i<present.length; i++){
+                present[i].usingSomeoneElseIP = false;
+                present[i].save();
+              }
+            }
+            else{
+              for(let i=0; i<present.length; i++){
+                present[i].usingSomeoneElseIP = true;
+                present[i].save();
+              }
+              unique = 'Yes';
+            }
+            ejs.renderFile(path.resolve(__dirname,'../../views/facultyQuiz/pdfSubmission.ejs'), {
+              maxPlag: maxPlag, 
+              submission: submission, 
+              questionSubmissions: questionSubmissions, 
+              page: submission.user.username.toUpperCase(), 
+              unique: unique
+            }, function(err, data){
+              let options = {
+                "height": "11.25in",
+                "width": "8.5in",
+                "header": {
+                  "height": "20mm"
+                },
+                "footer": {
+                  "height": "20mm",
+                },
+              };
+              pdf.create(data, options).toFile(submission.user.username.toUpperCase()+"_"+submission.quiz._id+".pdf", async function (err, data) {
+                if (err) {
+                  return res.status(204).send();
+                }
+                else {
+                  await zip.addLocalFile(path.resolve(__dirname,'../../'+submission.user.username.toUpperCase()+'_'+submission.quiz._id+'.pdf'));
+                  removeFile(path.resolve(__dirname,'../../'+submission.user.username.toUpperCase()+'_'+submission.quiz._id+'.pdf'));
+                  resolve();
+                }
+              });
+            })
+          }).clone().catch(function(err){console.log(err)})
+        }).clone().catch(function(err){console.log(err)})
+      })
+    })
+    Promise.all(submissionGeneration).then(async () => {
+      var zipFileContents = await zip.toBuffer();
+      res.end(zipFileContents);
+      return;
+    })
+  }).clone().catch(function(err){console.log(err)});
+}
+
+exports.assignSets = async (req, res) => {
+  await Quiz.findOne({_id: req.quizId}, async (err, quiz) => {
+    await Enrollment.find({course: quiz.course._id, accountType: config.student}, async (err, enrollments) => {
+      let generateSubmissionPromise = enrollments.map(function(enrollment, index){
+        return new Promise(async function(resolve){
+          await Submission.exists({quiz: req.quizId, user: enrollment.user._id}, async (err, submission) => {
+            if(!submission){
+              await Submission.create({quiz: req.quizId, user: enrollment.user._id});
+              resolve();
+            }
+            else{
+              resolve();
+            }
+          })
+        })
+      })
+  
+      Promise.all(generateSubmissionPromise).then(async function(){
+        if(Date.now() >= quiz.startDate){
+          return res.status(204).send();
+        }
+        else{
+          await Submission.find({quiz: req.quizId}, async (err, submissions) => {
+            let currentIndex = submissions.length,  randomIndex;
+            while (currentIndex != 0) {
+              randomIndex = Math.floor(Math.random() * currentIndex);
+              currentIndex--;
+              [submissions[currentIndex], submissions[randomIndex]] = [submissions[randomIndex], submissions[currentIndex]];
+            }
+            var k = Math.floor(submissions.length/quiz.setCount);
+            var j = 0;
+            for(let i=0; i<submissions.length; i++){
+              if(i%k == 0){
+                j += 1;
+                j %= quiz.setCount;
+              }
+              submissions[i].set = quiz.setNames[j];
+              submissions[i].save();
+              generateStudentSubmission.add({submissionId: submissions[i]._id, quizId: quiz._id});
+            }
+            return res.status(204).send();
+          }).clone().catch(function(err){console.log(err)})
+        }
+      })
+    }).clone().catch(function(err){console.log(err)})
+  }).clone().catch(function(err){console.log(err)})
+  
 }
