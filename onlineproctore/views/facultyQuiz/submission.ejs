@@ -137,6 +137,20 @@
                                                         </td>
                                                     </tr>
                                                 </table>
+                                                <div style="text-align: center;">
+                                                <% for(let ic=0; ic<questionSubmissions[i].question.imageLinks.length; ic++){ %>
+                                                    <iframe 
+                                                        <% if(ic==0){ %>
+                                                            class="questionImage1"
+                                                        <% }else{ %>
+                                                            class="questionImage2"
+                                                        <% } %>
+                                                        src="<%= 'https://drive.google.com/file/d/' + questionSubmissions[i].question.imageLinks[ic].split('/').reverse()[1] + '/preview' %>" allow="autoplay"></iframe>
+                                                        <% if(ic==0){ %>
+                                                            <br>
+                                                        <% } %>
+                                                <% } %>
+                                                </div>
                                             </div> <hr>
                                             <div class="answer1 checkbox">
                                                 <% for(var j=0; j<questionSubmissions[i].question.options.length; j++){ %>
@@ -191,6 +205,20 @@
                                                         </td>
                                                     </tr>
                                                 </table>
+                                                <div style="text-align: center;">
+                                                    <% for(let ic=0; ic<questionSubmissions[i].question.imageLinks.length; ic++){ %>
+                                                        <iframe 
+                                                        <% if(ic==0){ %>
+                                                            class="questionImage1"
+                                                        <% }else{ %>
+                                                            class="questionImage2"
+                                                        <% } %>
+                                                        src="<%= 'https://drive.google.com/file/d/' + questionSubmissions[i].question.imageLinks[ic].split('/').reverse()[1] + '/preview' %>" allow="autoplay"></iframe>
+                                                        <% if(ic==0){ %>
+                                                            <br>
+                                                        <% } %>
+                                                    <% } %>
+                                                </div>
                                             </div> <hr>
                                             <div class="answer1">
                                                 <div class="sub-answer"><%= questionSubmissions[i].textfield %></div>

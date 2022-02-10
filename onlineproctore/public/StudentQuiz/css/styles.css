@@ -1,3 +1,11 @@
+body{
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
 .heading{
     font-family: "Kaushan Script","Helvetica Neue",Helvetica,Arial,cursive;
     color: #5BB12F;
@@ -11,6 +19,13 @@
     /* text-align: right; */
     line-height: 1.5;
 }
+.timer{
+    font-family:cursive;
+    color: #5BB12F;
+    font-size: 1rem;
+    /* text-align: right; */
+    line-height: 1.5;
+}
 .info{
     float: right;
 }
@@ -20,7 +35,6 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.5rem 1rem;
-    padding-bottom: 0;
     background-color: #fff;
     box-shadow: 0 4px 18px 0px rgb(0 0 0 / 12%), 0 7px 10px -5px rgb(0 0 0 / 15%);
 }
@@ -31,7 +45,8 @@
     padding:10px 15px;
 }
 .quiz-card{
-    height:78vh;
+    /* min-height:78vh; */
+    height: fit-content;
     border: solid 1px gray;
     border-radius: 10px;
     box-shadow: 0 4px 18px 0px rgb(0 0 0 / 12%), 0 7px 10px -5px rgb(0 0 0 / 15%);
@@ -39,18 +54,47 @@
     padding-bottom: 10px ;
 }
 .side-card-nav{
-    height:78vh;
+    /* min-height:78vh; */
+    /* height: 50%; */
     border: solid 1px gray;
     border-radius: 10px;
     box-shadow: 0 4px 18px 0px rgb(0 0 0 / 12%), 0 7px 10px -5px rgb(0 0 0 / 15%);
     background-color: #fff;
     padding-bottom: 10px ;
+    margin-bottom: 10px;
+}
+.side-card-video{
+    margin-top: 10px; 
+    height: 33vh; 
+    padding: 10px;
+    border: solid 1px gray;
+    border-radius: 10px;
+    box-shadow: 0 4px 18px 0px rgb(0 0 0 / 12%), 0 7px 10px -5px rgb(0 0 0 / 15%);
+    background-color: #fff;
+}
+.side-card2{
+    height: fit-content; 
+    /* margin-left: 10px; */
+    padding: 10px;
+    border: solid 1px gray;
+    border-radius: 10px;
+    box-shadow: 20px 4px 18px 0px rgb(0 0 0 / 12%), 0 7px 10px -5px rgb(0 0 0 / 15%);
+    background-color: #fff;
+}
+.instructions-card{
+    height: 78vh; 
+    /* margin-left: 10px; */
+    padding: 10px;
+    border: solid 1px gray;
+    border-radius: 10px;
+    box-shadow: 20px 4px 18px 0px rgb(0 0 0 / 12%), 0 7px 10px -5px rgb(0 0 0 / 15%);
+    background-color: #fff;
 }
 .panel-default{
     padding-top: 10px;
 }
 .panel-body{
-    height:75vh; 
+    height:80px; 
     overflow-y:scroll;
 }
 .question{
@@ -62,6 +106,11 @@
     line-height: 2;
     height: 50vh;
     overflow-y:scroll;
+}
+.answer2{
+    padding: 5px 35px;
+    line-height: 2;
+    height: 50vh;
 }
 .options{
     padding-left: 10px;
@@ -308,7 +357,7 @@
 }
 textarea{
     width: 100%;
-    height: 45vh !important;
+    height: 250px !important;
     border-radius: 10px;
     box-shadow: 0 4px 18px 0px rgb(0 0 0 / 12%), 0 7px 10px -5px rgb(0 0 0 / 15%);
     background-color: #8bf15836;
@@ -316,6 +365,69 @@ textarea{
 }
 td{
     margin-right: 10px;
+}
+.mtable{
+    font-family:cursive;
+    color: #5BB12F;
+    font-size: 1rem;
+    /* text-align: right; */
+    line-height: 1.5;
+    width: 80%;
+}
+.quest{
+    width: 90%;
+}
+.marks{
+    font-size: 1rem;
+    width: 10%;
+    padding-top: 1%;
+    color: red;
+    text-align: right;
+}
+.card .card-header-green .card-icon,
+.card .card-header-green:not(.card-header-icon):not(.card-header-text),
+.card .card-header-green .card-text{
+  box-shadow: 0 4px 20px 0px rgba(0, 0, 0, 0.14), 0 7px 10px -5px rgba(30, 161, 30, 0.4);
+}
+.card .card-header-green .card-icon,
+.card .card-header-green .card-text,
+.card .card-header-green:not(.card-header-icon):not(.card-header-text),
+.card.bg-green,
+.card.card-rotate.bg-green .front,
+.card.card-rotate.bg-green .back {
+  background: linear-gradient(60deg, #5BB12F, #5BB12F);
+}
+.blank-space{
+    height: 50px;
+}
+.questionImage1{
+    width: 600px;
+    height: 450px;
+    margin-bottom: 5px;
+}
+.questionImage2{
+    width: 400px;
+    height: 300px;
+    margin: 5px;
+}
+.side{
+    height: 100%;
+    display:flow-root;
+}
+.col-seld{
+    height: 25%;
+}
+
+@media (max-width: 991px){
+    #navigationBar{
+        height: fit-content;
+    }
+}
+@media (max-width: 710px){
+    .questionImage1{
+        width: 100%;
+        height: 75vw;
+    }
 }
 @media (max-width: 575px){
     .nbar{
@@ -327,11 +439,14 @@ td{
     .info{
         float: unset;
     }
-    textarea{
-        height: 30vh !important;
+    .blank-space{
+        height: 150px;
     }
-    .answer{
-        height: 40vh;
+}
+@media (max-width: 510px){
+    .questionImage2{
+        width: 100%;
+        height: 75vw;
     }
 }
 @media (max-width:377px){
@@ -342,82 +457,28 @@ td{
         height: 25vh;
     }
 }
-@media (max-height: 575px){
-    .answer{
-        height: 43vh;
-    }
-}
-@media (max-height: 500px){
+@media (max-height: 550px){
     textarea{
-        height: 40vh !important;
-    }
-    .quiz-card,.side-card-nav{
-        height:79vh;
-    }
-    .answer{
-        height: 40vh;
+        height: 220px !important;
     }
 }
-@media (max-height: 430px){
+@media (max-height: 485px){
     textarea{
-        height: 35vh !important;
-    }
-    .quiz-card,.side-card-nav{
-        height:80vh;
-    }
-    .answer{
-        height: 35vh;
+        height: 200px !important;
     }
 }
-@media (max-height: 360px){
+@media (max-height: 445px){
     textarea{
-        height: 30vh !important;
-    }
-    .quiz-card,.side-card-nav{
-        height:82vh;
-    }
-    .answer{
-        height: 30vh;
+        height: 150px !important;
     }
 }
-@media (max-height: 335px){
+@media (max-height: 350px){
     textarea{
         height: 100px !important;
     }
-    .quiz-card,.side-card-nav{
-        height:275px;
+}
+@media (max-height: 250px){
+    textarea{
+        height: 50px !important;
     }
-    .answer{
-        height: 100px;
-    }
-}
-@media (max-width:767px){
-    .side-card-nav{
-        height:fit-content;
-    }
-    .panel-body{
-        height:fit-content; 
-        overflow-y:scroll;
-    }
-}
-.qtable{
-    width: 100%;
-}
-.quest{
-    width: 80%;
-}
-.marks{
-    font-size: 1rem;
-    width: 20%;
-    padding-top: 1%;
-    text-align: right;
-}
-.marks-table{
-    float: right;
-}
-.marks-assigned-positive{
-    color: #5BB12F;
-}
-.marks-assigned-zero{
-    color: red;
 }
