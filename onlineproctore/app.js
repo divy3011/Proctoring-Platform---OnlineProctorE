@@ -10,9 +10,23 @@ const device = require('express-device');
 const config = require('./config');
 const {auth} = require('./controllers/login_logout/authenticate');
 var app = express();
+const http = require('http');
+const https = require('https');
+const httpPort = process.env.PORT || 3000;
+const httpsPort = 3443;
+const privateKey = fs.readFileSync('./bin/certificates/private.key')
+const certificate = fs.readFileSync('./bin/certificates/certificate.pem')
+const Course = require('./models/course');
+const credentials = {
+  key: privateKey,
+  cert: certificate
+}
+var HOST = 'localhost';
 
-const server = require('http').Server(app);
-const io = require('socket.io')(server);
+const server = http.createServer(app).listen(httpPort, HOST, () => { console.log('Main Server listening to port ' + httpPort) });
+const secureServer = https.createServer(credentials, app).listen(httpsPort, HOST, () => { console.log('Peer Server listening to port ' + httpsPort) })
+const io = require('socket.io')(secureServer);
+// const io = require('socket.io')(server);
 const { ExpressPeerServer } = require('peer');
 const peerServer = ExpressPeerServer(server, {
   debug: true
@@ -53,6 +67,13 @@ app.use('/', index);
 app.get('/.well-known/pki-validation/1C037F04249B0088AB3D82E23FBB70E3.txt', (req, res) => {
   res.sendFile(path.resolve(__dirname, '1C037F04249B0088AB3D82E23FBB70E3.txt'));
 })
+// app.get('/getcourses', async (req, res) => {
+//   // var courses = await Course.findCourses({});
+//   // console.log('ejinjf');
+//   var courses1 = await Course.findOneCourse({_id: "61f0346999984a49b68ccbd7"});
+//   console.log('almkmk');
+//   res.json({courses1: courses1});
+// })
 app.use('/users', users);
 app.use(auth);
 app.use('/dashboard', userRedirect);
@@ -83,8 +104,18 @@ io.on('connection', socket => {
   });
 })
 
-var port = process.env.PORT || 3000;
-var HOST = 'localhost';
-server.listen(port, HOST, () => {
-  console.log('server is listening on port:', port)
+// catch 404 and forward to error handler
+app.use(function(req, res, next) {
+  next(createError(404));
+});
+
+// error handler
+app.use(function(err, req, res, next) {
+  // set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+  // render the error page
+  res.status(err.status || 500);
+  return res.render('error/error', {authorized: true});
 });

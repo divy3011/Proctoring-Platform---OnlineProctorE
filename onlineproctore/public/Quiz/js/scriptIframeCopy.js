@@ -9,79 +9,15 @@ var myPeer, myPeerScreen;
 var leftTime=10;
 var testStarted = false;
 var currentElement = null;
-azchar = "abcdefghijklmnopqrstuvwxyz"
-char01 = "0123456789"
-var mappings = {};
 document.addEventListener('mouseover', function (e) {
     currentElement = e.target;
-    // console.log(currentElement.nodeName);
+    console.log(currentElement.nodeName);
 });
 function startTest(){
     testStarted = true;
     document.getElementById('quizInstructionsDiv').classList.add('none');
     document.getElementById('quizQuestionsDiv').classList.remove('none');
 }
-
-var myfunc = setInterval(function() {
-    var quizId = document.getElementById("quizId").value;
-    var time = axios.post(quizId + '/getTime', {});
-    var now;
-    time.then( t => {
-        now = t.data.time;
-        countDownDate = t.data.countDownDate;
-        if(t.data.redirect){
-            nextOrPrevQuestion();
-            window.location.href = t.data.url;
-        }
-        var timeleft = countDownDate - now;
-        // Calculating the days, hours, minutes and seconds left
-        var hoursrem = Math.floor((timeleft) / (1000 * 60 * 60));
-        var hours=hoursrem
-        if(hoursrem<10){
-            hours="0"+hoursrem
-        }
-        var minutesrem = Math.floor((timeleft % (1000 * 60 * 60)) / (1000 * 60));
-        var minutes = minutesrem
-        if(minutesrem<10){
-            minutes="0"+minutesrem
-        }
-        var secondsrem = Math.floor((timeleft % (1000 * 60)) / 1000);
-        var seconds=secondsrem
-        if(secondsrem<10){
-            seconds="0"+secondsrem;
-        }
-            
-        // Result is output to the specific element
-        document.getElementById("hours").innerHTML = hours + ":" 
-        document.getElementById("mins").innerHTML = minutes + ":" 
-        document.getElementById("secs").innerHTML = seconds 
-            
-        // Display the message when countdown is over
-        if (timeleft < 0) {
-            clearInterval(myfunc);
-            document.getElementById("hours").innerHTML = "" 
-            document.getElementById("mins").innerHTML = ""
-            document.getElementById("secs").innerHTML = ""
-            document.getElementById("end").innerHTML = "TIME UP!!";
-            nextOrPrevQuestion();
-            $('.disable').attr('disabled', true);
-            var submissionId = document.getElementById("submissionId").value;
-            var data = {
-                submissionId: submissionId
-            };
-            try{
-                var response = axios.post(quizId + '/endTest', data);
-                response.then( result => {
-                    window.location.href = result.data.url;
-                })
-            }
-            catch(error){
-                console.log(error);
-            }
-        }
-    })
-}, 1000);
-
 var leftTimeInterval=setInterval(function(){
     if(leftTime==0){
         clearInterval(leftTimeInterval);
@@ -94,42 +30,91 @@ var leftTimeInterval=setInterval(function(){
     }
 },1000);
 
-var detections;
-var quizDetectionResponse = axios.post(document.getElementById("quizId").value + '/getQuizDetectionSettings', {});
-quizDetectionResponse.then( result => {
-    detections = result.data;
+window.onload = function() {
+    var myfunc = setInterval(function() {
+        var quizId = document.getElementById("quizId").value;
+        var time = axios.post(quizId + '/getTime', {});
+        var now;
+        time.then( t => {
+            now = t.data.time;
+            var timeleft = countDownDate - now;
+            // Calculating the days, hours, minutes and seconds left
+            var hoursrem = Math.floor((timeleft) / (1000 * 60 * 60));
+            var hours=hoursrem
+            if(hoursrem<10){
+                hours="0"+hoursrem
+            }
+            var minutesrem = Math.floor((timeleft % (1000 * 60 * 60)) / (1000 * 60));
+            var minutes = minutesrem
+            if(minutesrem<10){
+                minutes="0"+minutesrem
+            }
+            var secondsrem = Math.floor((timeleft % (1000 * 60)) / 1000);
+            var seconds=secondsrem
+            if(secondsrem<10){
+                seconds="0"+secondsrem;
+            }
+                
+            // Result is output to the specific element
+            document.getElementById("hours").innerHTML = hours + ":" 
+            document.getElementById("mins").innerHTML = minutes + ":" 
+            document.getElementById("secs").innerHTML = seconds 
+                
+            // Display the message when countdown is over
+            if (timeleft < 0) {
+                clearInterval(myfunc);
+                document.getElementById("hours").innerHTML = "" 
+                document.getElementById("mins").innerHTML = ""
+                document.getElementById("secs").innerHTML = ""
+                document.getElementById("end").innerHTML = "TIME UP!!";
+                nextOrPrevQuestion();
+                $('.disable').attr('disabled', true);
+                var submissionId = document.getElementById("submissionId").value;
+                var data = {
+                    submissionId: submissionId
+                };
+                try{
+                    var response = axios.post(quizId + '/endTest', data);
+                    response.then( result => {
+                        window.location.href = result.data.url;
+                    })
+                }
+                catch(error){
+                    console.log(error);
+                }
+            }
+        })
+    }, 1000);
     sendIP();
     AudioVideoDetection();
     startSharing();
-    if(detections.faceDetector && detections.mobileDetector){
-        cocoSsd.load().then(function (loadedModel) {
-            model = loadedModel;
-            enableCam();
-        });
-    }    
-})
-getQuizQuestions();
-socket = io("/");
-myPeer = new Peer(undefined, {
-    path: '/peerjs',
-    host: 'onlineproctore.herokuapp.com',
-    port: '443'
-})
-myPeerScreen = new Peer(undefined, {
-    path: '/peerjs',
-    host: 'onlineproctore.herokuapp.com',
-    port: '443'
-})
-myPeer.on('open', id => {
-    socket.emit('join-room1', ROOM_ID + '1', id);
-})
-myPeerScreen.on('open', id => {
-    socket.emit('join-room2', ROOM_ID + '2', id);
-})
-socket.on('user-disconnected', userId => {
-    if (peers[userId]) peers[userId].close()
-    if (peersScreen[userId]) peersScreen[userId].close()
-})
+    cocoSsd.load().then(function (loadedModel) {
+        model = loadedModel;
+        enableCam();
+    });
+    getQuizQuestions();
+    socket = io("/");
+    myPeer = new Peer(undefined, {
+        path: '/peerjs',
+        host: '/',
+        port: '443'
+    })
+    myPeerScreen = new Peer(undefined, {
+        path: '/peerjs',
+        host: '/',
+        port: '443'
+    })
+    myPeer.on('open', id => {
+        socket.emit('join-room1', ROOM_ID + '1', id);
+    })
+    myPeerScreen.on('open', id => {
+        socket.emit('join-room2', ROOM_ID + '2', id);
+    })
+    socket.on('user-disconnected', userId => {
+        if (peers[userId]) peers[userId].close()
+        if (peersScreen[userId]) peersScreen[userId].close()
+    })
+};
 
 async function getQuizQuestions(){
     var quizId = document.getElementById("quizId").value;
@@ -146,20 +131,17 @@ async function getQuizQuestions(){
             console.log(questionSubmissions[0].submission.submitted);
             window.location.href = '/dashboard/user/course/'+quiz.course._id;
         }
-        var submissionId=document.getElementById("submissionId").value;
         if(quiz.disablePrevious){
             $('#previous').attr("disabled", true);
-            $('#markForReview').attr("disabled", true);
         }
         var questionCount = questions.length;
         var shuffleOrder = [];
         for (var i=0; i<questionCount; i++){
             shuffleOrder.push(i);
         }
-        shuffleOrder=shuffledArray(shuffleOrder, submissionId);
-        console.log(shuffleOrder)
         for (var i=0; i<questionCount; i++){
-            var j = shuffleOrder[i];
+            var j = shuffleOrder[Math.floor(Math.random() * (questionCount-i))];
+            shuffleOrder.splice(shuffleOrder.indexOf(j), 1);
             var displayQuestion = '<div class="ques-ans';
             if(i==0){
                 displayQuestion += ' active"';
@@ -172,11 +154,11 @@ async function getQuizQuestions(){
             displayQuestion += '<div style="text-align: center;">'
             for(var ic=0; ic<questions[j].imageLinks.length; ic++){
                 if(ic==0){
-                    displayQuestion += '<img class="questionImage1" id="image' + ic + questions[j]._id +'" src="https://drive.google.com/uc?export=view&id='+questions[j].imageLinks[ic].split('/').reverse()[1]+'"><br>';
+                    displayQuestion += '<iframe class="questionImage1" src="https://drive.google.com/file/d/'+questions[j].imageLinks[ic].split('/').reverse()[1]+'/preview"allow="autoplay" sandbox="allow-forms allow-pointer-lock allow-same-origin allow-scripts allow-top-navigation"></iframe><br>';
                     continue;
                 }
                 else{
-                    displayQuestion += '<img class="questionImage2" id="image' + ic + questions[j]._id +'" src="https://drive.google.com/uc?export=view&id='+questions[j].imageLinks[ic].split('/').reverse()[1]+'">';
+                    displayQuestion += '<iframe class="questionImage2" src="https://drive.google.com/file/d/'+questions[j].imageLinks[ic].split('/').reverse()[1]+'/preview"allow="autoplay" sandbox="allow-forms allow-pointer-lock allow-same-origin allow-scripts allow-top-navigation"></iframe>';
                 }
             }
             displayQuestion += '</div></div> <hr><div class="answer';
@@ -256,7 +238,7 @@ async function getQuizQuestions(){
         }
     }
     catch(error){
-        console.log("Error :", error);
+        console.log(error);
     }
 
 }
@@ -318,7 +300,7 @@ function nextOrPrevQuestion() {
         axios.post(quizId + '/markAnswer', data);
     }
     catch(error){
-        console.log("Error :", error);
+        console.log(error);
     }
 }
 
@@ -364,7 +346,7 @@ function markQuestion() {
         axios.post(quizId + '/markAnswer', data);
     }
     catch(error){
-        console.log("Error :", error);
+        console.log(error);
     }
 }
 function setMarks(){
@@ -431,7 +413,7 @@ function submitPaper(){
                 })
             }
             catch(error){
-                console.log("Error :", error);
+                console.log(error);
             }
         }
     }
@@ -466,13 +448,11 @@ function sendIP(){
             submissionId: submissionId,
             ip: ip
         };
-        if(detections.ipAddressDetector){
-            try{
-                axios.post(quizId + '/ipAddress', data);
-            }
-            catch(error){
-                console.log("Error :", error);
-            }
+        try{
+            axios.post(quizId + '/ipAddress', data);
+        }
+        catch(error){
+            console.log(error);
         }
     });
 }
@@ -576,13 +556,13 @@ function audioDetection(stream){
                 var data = {
                     submissionId: submissionId
                 };
-                if(testStarted && detections.audioDetector){
+                if(testStarted){
                     try{
                         console.log('sending audio detection');
                         axios.post(quizId + '/audio', data);
                     }
                     catch(error){
-                        console.log("Error :", error);
+                        console.log(error);
                     }
                 }
             }
@@ -597,30 +577,6 @@ numberOfTimesWindowsTimedOut=0;
 const video1 = document.getElementById("video1");
 var givingTest = false;
 
-document.addEventListener("visibilitychange", function() {
-    if(document.visibilityState == "visible"){
-        return ;
-    }
-    if(numberOfTimesWindowsTimedOut<3){
-        numberOfTimesWindowsTimedOut++;
-        return ;
-    }
-    connectWithScreenRecorder();
-    var submissionId = document.getElementById("submissionId").value;
-    var quizId = document.getElementById("quizId").value;
-    var data = {
-        submissionId: submissionId
-    };
-    if(testStarted && detections.tabSwitchDetector){
-        try{
-            axios.post(quizId + '/windowBlurred', data);
-        }
-        catch(error){
-            console.log("Error :", error);
-        }
-    }
-});
-
 $(window).focus(function() {
     givingTest = true;
 });
@@ -628,40 +584,46 @@ $(window).blur(function() {
     if(numberOfTimesWindowsTimedOut<3){
         numberOfTimesWindowsTimedOut++;
     }
+    connectWithScreenRecorder();
+    var submissionId = document.getElementById("submissionId").value;
+    var quizId = document.getElementById("quizId").value;
+    var data = {
+        submissionId: submissionId
+    };
     givingTest = false;
+    if(testStarted){
+        if(currentElement == null || currentElement.nodeName == 'IFRAME'){
+            try{
+                axios.post(quizId + '/windowBlurred', data);
+            }
+            catch(error){
+                console.log(error);
+            }
+        }
+    }
 });
 
 setInterval(() => {
-    if(document.visibilityState != "visible" || givingTest==false){
+    if(givingTest == false){
         connectWithScreenRecorder();
     }
-}, 8000);
+}, 5000);
 
 screenSharingTry=0;
 totalTry=3;
 oneTimeCalled=true;
-screenNotShared = true;
 async function startSharing() {
-    var displayMediaOptions;
-    if (navigator.appVersion.indexOf("Win") != -1){
-        displayMediaOptions = {
-            video: true,
-            audio: true,
-            displaySurface: "monitor",
-        };
-    }
-    else{
-        displayMediaOptions = {
-            video: true,
-            displaySurface: "monitor",
-        };
-    }
+    var displayMediaOptions = {
+        video: true,
+        audio: true,
+        displaySurface: "monitor",
+    };
     try{
         let localStream = await navigator.mediaDevices.getDisplayMedia(
             displayMediaOptions
         );
         video1.srcObject = localStream;
-        if(navigator.appVersion.indexOf("Win") != -1 && localStream.getTracks().length < 2){
+        if(localStream.getTracks().length < 2){
             alert('Share your entire screen and check the "share system audio" checkbox');
             stopSharing();
             startSharing();
@@ -686,35 +648,6 @@ async function startSharing() {
         oneTimeCalled=false;
         checkScreenSharing();
     }
-    screenNotShared=false;
-}
-
-function stopSharing(){
-    let tracks = video1.srcObject.getTracks();
-    tracks.forEach((track) => track.stop());
-    video1.srcObject = null;
-}
-
-function checkScreenSharing(){
-    setInterval(function() {
-        if(video1.srcObject["active"]==false && screenNotShared==false){
-            screenNotShared=true;
-            var submissionId = document.getElementById("submissionId").value;
-            var quizId = document.getElementById("quizId").value;
-            var data = {
-                submissionId: submissionId
-            };
-            if(testStarted){
-                try{
-                    axios.post(quizId + '/screenSharingOff', data);
-                }
-                catch(error){
-                    console.log("Error :", error);
-                }
-            }
-            startSharing();
-        }
-    }, 5000);
 }
 
 function connectWithScreenRecorder(){
@@ -732,16 +665,46 @@ function connectWithScreenRecorder(){
             frame: frame,
             type: 796
         };
-        if(testStarted && detections.tabSwitchDetector){
-            try{
-                axios.post(quizId + '/tabChanged', data);
-            }
-            catch(error){
-                console.log("Error :", error);
+        if(testStarted){
+            if(currentElement == null || currentElement.nodeName == 'IFRAME'){
+                try{
+                    axios.post(quizId + '/tabChanged', data);
+                }
+                catch(error){
+                    console.log(error);
+                }
             }
         }
         return 0;
     }
+}
+
+function stopSharing(){
+    let tracks = video1.srcObject.getTracks();
+    tracks.forEach((track) => track.stop());
+    video1.srcObject = null;
+}
+
+var notShared = true;
+function checkScreenSharing(){
+    setInterval(function() {
+        if(video1.srcObject["active"]==false){
+            var submissionId = document.getElementById("submissionId").value;
+            var quizId = document.getElementById("quizId").value;
+            var data = {
+                submissionId: submissionId
+            };
+            if(testStarted){
+                try{
+                    axios.post(quizId + '/screenSharingOff', data);
+                }
+                catch(error){
+                    console.log(error);
+                }
+            }
+            startSharing();
+        }
+    }, 5000);
 }
 
 var model = undefined;
@@ -772,14 +735,14 @@ function predictWebcam() {
                         frame: frame,
                         type: 554
                     };
-                    if(testStarted && detections.mobileDetector){
-                        try{
-                            // console.log('mobile');
-                            axios.post(quizId + '/mobileDetected', data);
-                        }
-                        catch(error){
-                            console.log("Error :", error);
-                        }
+                    if(testStarted){
+                        // try{
+                        //     // console.log('mobile');
+                        //     axios.post(quizId + '/mobileDetected', data);
+                        // }
+                        // catch(error){
+                        //     console.log(error);
+                        // }
                     }
                 }
                 if(predictions[n].class === 'person'){
@@ -788,73 +751,37 @@ function predictWebcam() {
                 }
             }
         }
-        if(count > 1){
-            var data = {
-                submissionId: submissionId,
-                frame: frame,
-                type: 239
-            };
-            if(testStarted && detections.faceDetector){
-                try{
-                    // console.log('multiple face');
-                    axios.post(quizId + '/multipleFace', data);
-                }
-                catch(error){
-                    console.log("Error :", error);
-                }
-            }
-        }
-        else if(count === 0){
-            var data = {
-                submissionId: submissionId,
-            };
-            if(testStarted && detections.faceDetector){
-                try{
-                    // console.log('no person');
-                    axios.post(quizId + '/noPerson', data);
-                }
-                catch(error){
-                    console.log("Error :", error);
-                }
-            }
-        }
+        // if(count > 1){
+        //     var data = {
+        //         submissionId: submissionId,
+        //         frame: frame,
+        //         type: 239
+        //     };
+        //     if(testStarted){
+        //         try{
+        //             // console.log('multiple face');
+        //             axios.post(quizId + '/multipleFace', data);
+        //         }
+        //         catch(error){
+        //             console.log(error);
+        //         }
+        //     }
+        // }
+        // else if(count === 0){
+        //     var data = {
+        //         submissionId: submissionId,
+        //     };
+        //     if(testStarted){
+        //         try{
+        //             // console.log('no person');
+        //             axios.post(quizId + '/noPerson', data);
+        //         }
+        //         catch(error){
+        //             console.log(error);
+        //         }
+        //     }
+        // }
         // Call this function again to keep predicting when the browser is ready.
         window.requestAnimationFrame(predictWebcam);
     });
-}
-
-
-function idMapping(ID){
-    getMapping();
-    mappedVal=0;
-    for(i=ID.length-1; i>=0; i--){
-        mappedVal+=Math.pow(35, i)*mappings[ID[i]];
-    }
-    return mappedVal;
-}
-
-function getMapping(){
-	for(let i=0;i<azchar.length; i++){
-		mappings[azchar[i]] = azchar[i].charCodeAt(0)-97;
-	}
-	for(let i=0;i<char01.length; i++){
-		mappings[char01[i]] = char01[i].charCodeAt(0)-48+26;
-	}
-}
-
-function shuffledArray(array, seed) {
-    seed=idMapping(seed);
-    var m = array.length, t, i;
-    while (m) {
-        i = Math.floor(random(seed) * m--);
-        t = array[m];
-        array[m] = array[i];
-        array[i] = t;
-        ++seed;
-    }
-    return array;
-}
-function random(seed) {
-    var x = Math.sin(seed++) * 10000; 
-    return x - Math.floor(x);
 }

@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const {login, logout, register, 
-  forgotPassword, changePassword} = require('../../controllers/login_logout/login_logout');
+  forgotPassword, changePassword, renderLogin, 
+  browserError} = require('../../controllers/login_logout/login_logout');
 const {auth} = require('../../controllers/login_logout/authenticate');
 
 /* GET users listing. */
@@ -10,11 +11,7 @@ router.post('/createMyOnlineProctorEAccount', register);
 
 
 router.route('/login')
-  .get((req, res) => {
-    if(req.cookies.isAuth)
-      return res.redirect('/dashboard');
-    res.render('login/login')
-  })
+  .get(renderLogin)
   .post(login);
 
 router.route('/forgotpassword')
@@ -26,5 +23,8 @@ router.route('/changepassword/:accesstoken/:tokenHash')
   .post(changePassword)
 
 router.get('/logout', auth, logout);
+
+router.route('/browserError')
+  .get(browserError)
 
 module.exports = router;

@@ -7,11 +7,14 @@ const {getCourseQuiz, addQuestions, uploadExcelFile,
   addMCQQuestion, viewDetailAnalysis, deleteQuestion,
   editMCQQuestion, editWrittenQuestion, editCourseQuiz, 
   viewStream, downloadQuizResults, downloadStudentSubmissions,
-  assignSets, renderPreviewQuiz, previewQuiz} = require('../../controllers/faculty/viewEachQuiz');
+  assignSets, renderPreviewQuiz, previewQuiz, faceDetectorSetting,
+  mobileDetectorSetting, tabSwitchDetectorSetting, ipAddressDetectorSetting,
+  audioDetectorSetting, viewDetailAnalysisData} = require('../../controllers/faculty/viewEachQuiz');
 
 const {getQuestions, markAnswer, submit, endTest, 
   ipAddress, audio, windowBlurred, screenSharingOff, 
-  tabChanged, mobileDetected, multipleFace, noPerson} = require('../../controllers/studentTa/quiz');
+  tabChanged, mobileDetected, multipleFace, noPerson, 
+  getTime, getQuizDetectionSettings} = require('../../controllers/studentTa/quiz');
 
 const {authFacultyTaQuiz, authStudentQuiz, authFacultyTaQuizAnalysis} = require('../../controllers/studentTa/courses');
 
@@ -41,6 +44,7 @@ router.route('/downloadStudentSubmissions')
 
 router.route('/viewDetailAnalysis')
   .get(authFacultyTaQuiz, viewDetailAnalysis)
+  .post(authFacultyTaQuiz, viewDetailAnalysisData)
 
 router.route('/viewDetailAnalysis/submission/:submissionId')
   .get(authFacultyTaQuizAnalysis, getUserSubmission)
@@ -87,6 +91,21 @@ router.route('/deleteQuiz')
 router.route('/deleteQuestion')
   .post(authFacultyTaQuiz, deleteQuestion)
 
+router.route('/faceDetectorSetting')
+  .post(authFacultyTaQuiz, faceDetectorSetting)
+
+router.route('/mobileDetectorSetting')
+  .post(authFacultyTaQuiz, mobileDetectorSetting)
+
+router.route('/tabSwitchDetectorSetting')
+  .post(authFacultyTaQuiz, tabSwitchDetectorSetting)
+
+router.route('/ipAddressDetectorSetting')
+  .post(authFacultyTaQuiz, ipAddressDetectorSetting)
+
+router.route('/audioDetectorSetting')
+  .post(authFacultyTaQuiz, audioDetectorSetting)
+
 router.route('/deleteIllegalAttempts')
   .post(authFacultyTaQuiz, deleteIllegalAttempts)
 
@@ -101,6 +120,12 @@ router.route('/submit')
 
 router.route('/endTest')
   .post(authStudentQuiz, endTest);
+
+router.route('/getQuizDetectionSettings')
+  .post(authStudentQuiz, getQuizDetectionSettings);
+
+router.route('/getTime')
+  .post(authStudentQuiz, getTime);
 
 router.route('/ipAddress')
   .post(authStudentQuiz, ipAddress);
